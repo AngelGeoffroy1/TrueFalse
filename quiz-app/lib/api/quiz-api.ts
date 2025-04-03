@@ -744,6 +744,7 @@ export const quizApi = {
               is_correct,
               selected_option_id,
               question_id,
+              time_spent,
               questions(id, points)
             `)
             .eq('participant_id', participant.id);
@@ -910,7 +911,7 @@ export const quizApi = {
   // Fonction pour récupérer le temps moyen de réponse aux questions
   async getAvgResponseTime(teacherId: string) {
     try {
-      // Récupérer d'abord les sessions de l'enseignant
+      // Récupérer d'abord toutes les sessions créées par cet enseignant
       const { data: sessions, error: sessionsError } = await supabase
         .from('sessions')
         .select('id')
@@ -925,32 +926,31 @@ export const quizApi = {
         return { data: [], error: null };
       }
 
-      // Récupérer les IDs de session pour la requête
+      // Récupérer tous les IDs de session
       const sessionIds = sessions.map(session => session.id);
-      
-      // Récupérer les participants de ces sessions
+
+      // Récupérer tous les participants de ces sessions
       const { data: participants, error: participantsError } = await supabase
         .from('participants')
         .select('id')
         .in('session_id', sessionIds);
-        
+
       if (participantsError) {
         console.error('Erreur lors de la récupération des participants:', participantsError);
         return { data: null, error: participantsError };
       }
-      
+
       if (!participants || participants.length === 0) {
         return { data: [], error: null };
       }
-      
-      // Récupérer les IDs des participants
-      const participantIds = participants.map(participant => participant.id);
 
-      // Récupérer les temps de réponse pour ces participants
-      const { data: answersData, error: answersError } = await supabase
+      // Récupérer tous les IDs de participant
+      const participantIds = participants.map(p => p.id);
+
+      // Récupérer les temps de réponse de ces participants (inclure les temps à 0)
+      const { data: answers, error: answersError } = await supabase
         .from('answers')
         .select('time_spent')
-        .gt('time_spent', 0)
         .in('participant_id', participantIds);
 
       if (answersError) {
@@ -958,10 +958,88 @@ export const quizApi = {
         return { data: null, error: answersError };
       }
 
-      return { data: answersData || [], error: null };
+      return { data: answers || [], error: null };
     } catch (error) {
       console.error('Exception lors de la récupération des temps de réponse:', error);
       return { data: null, error };
+    }
+  },
+
+  // Fonction pour récupérer les données d'intégrité académique (triche)
+  async getIntegrityData(teacherId: string) {
+    try {
+      // Récupérer d'abord toutes les sessions créées par cet enseignant
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('teacher_id', teacherId);
+
+      if (sessionsError) {
+        console.error('Erreur lors de la récupération des sessions:', sessionsError);
+        return { 
+          data: { totalParticipants: 0, honestParticipants: 0, cheatingParticipants: 0 }, 
+          error: sessionsError 
+        };
+      }
+
+      if (!sessions || sessions.length === 0) {
+        return { 
+          data: { totalParticipants: 0, honestParticipants: 0, cheatingParticipants: 0 }, 
+          error: null 
+        };
+      }
+
+      // Récupérer tous les IDs de session
+      const sessionIds = sessions.map(session => session.id);
+
+      // Récupérer tous les participants de ces sessions avec leur nombre de tentatives de triche
+      const { data: participants, error: participantsError } = await supabase
+        .from('participants')
+        .select('id, cheat_attempts')
+        .in('session_id', sessionIds);
+
+      if (participantsError) {
+        console.error('Erreur lors de la récupération des participants:', participantsError);
+        return { 
+          data: { totalParticipants: 0, honestParticipants: 0, cheatingParticipants: 0 }, 
+          error: participantsError 
+        };
+      }
+
+      if (!participants || participants.length === 0) {
+        return { 
+          data: { totalParticipants: 0, honestParticipants: 0, cheatingParticipants: 0 }, 
+          error: null 
+        };
+      }
+
+      // Compter le nombre total de participants
+      const totalParticipants = participants.length;
+
+      // Compter les participants avec des tentatives de triche (cheat_attempts > 0)
+      const cheatingParticipants = participants.filter(p => p.cheat_attempts && p.cheat_attempts > 0).length;
+
+      // Calculer le nombre de participants honnêtes
+      const honestParticipants = totalParticipants - cheatingParticipants;
+
+      return { 
+        data: { 
+          totalParticipants, 
+          honestParticipants, 
+          cheatingParticipants 
+        }, 
+        error: null 
+      };
+    } catch (error) {
+      console.error('Exception lors de la récupération des données d\'intégrité:', error);
+      return { 
+        data: { 
+          totalParticipants: 0, 
+          honestParticipants: 0, 
+          cheatingParticipants: 0
+        }, 
+        error 
+      };
     }
   },
 }; 

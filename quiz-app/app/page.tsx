@@ -210,11 +210,11 @@ export default function Home() {
             <div className="flex items-center gap-2 flex-none">
               <div className="bg-blue-600 text-white p-1.5 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                  <path d="M2 17l10 5 10-5"></path>
-                  <path d="M2 12l10 5 10-5"></path>
-                </svg>
-              </div>
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
               <h1 className="text-xl font-bold text-blue-600">TrueFalse</h1>
             </div>
             
@@ -244,11 +244,11 @@ export default function Home() {
             <div className="flex gap-4 flex-none">
               <Button variant="ghost" asChild size="sm">
                 <Link href="/login" className="text-sm">Connexion</Link>
-              </Button>
+            </Button>
               <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 shadow-sm">
                 <Link href="/register" className="text-sm">Créer un compte</Link>
-              </Button>
-            </div>
+            </Button>
+        </div>
           </div>
         </div>
       </motion.header>
@@ -596,7 +596,7 @@ export default function Home() {
                   <motion.div 
                     key={idx}
                     initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: idx * 0.1 }}
                     viewport={{ once: true }}
                     className="flex items-start gap-3"
@@ -712,8 +712,8 @@ export default function Home() {
                       feature.color === "purple" ? "bg-purple-100 text-purple-600" :
                       "bg-red-100 text-red-600"
                     }`}>
-                      {feature.icon}
-                    </div>
+                  {feature.icon}
+                </div>
                     
                     <h3 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-slate-900">{feature.title}</h3>
                     <p className="text-slate-600 group-hover:text-slate-700">{feature.description}</p>
@@ -1163,7 +1163,7 @@ export default function Home() {
         {loaded && <ShiningPoints count={20} sectionId="pricing" />}
         
         <div className="container mx-auto px-6 relative z-10">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -1242,8 +1242,8 @@ export default function Home() {
                 </ul>
                 
                 <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
                   className="w-full py-3 rounded-lg border border-blue-400 text-blue-400 font-medium transition-all duration-300 hover:bg-blue-400 hover:text-slate-900"
                 >
                   Commencer gratuitement
@@ -1317,7 +1317,7 @@ export default function Home() {
                   Choisir ce plan
                 </motion.button>
               </div>
-            </motion.div>
+          </motion.div>
             
             {/* Plan 3: Entreprise */}
             <motion.div 

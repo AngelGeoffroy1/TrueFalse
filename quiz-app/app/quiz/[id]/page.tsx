@@ -87,6 +87,20 @@ export default function QuizPage() {
         ...prev,
         cheat_attempts: (prev?.cheat_attempts || 0) + 1
       }));
+      
+      // Vérifier si c'est la dernière question
+      if (currentQuestionIndex === quiz.questions.length - 1) {
+        // Marquer le participant comme ayant terminé le quiz
+        await quizApi.updateParticipant(participantId, {
+          completed_at: new Date().toISOString()
+        });
+        
+        // Mettre à jour l'état local
+        setParticipant((prev: any) => ({
+          ...prev,
+          completed_at: new Date().toISOString()
+        }));
+      }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement de la tentative de triche:", error);
     }
@@ -461,6 +475,13 @@ export default function QuizPage() {
             current_question: currentQuestionIndex + 1
           });
         }
+        
+        // Si c'était la dernière question, marquer comme terminé
+        if (currentQuestionIndex === quiz.questions.length - 1) {
+          await quizApi.updateParticipant(participantId, {
+            completed_at: new Date().toISOString()
+          });
+        }
       } catch (error) {
         console.error("Erreur lors de l'enregistrement de la réponse:", error);
       }
@@ -549,6 +570,61 @@ export default function QuizPage() {
             (typeof showAnswersSetting === 'string' && showAnswersSetting === 'true')) && 
            answerSubmitted === true;
   };
+
+  // Fonction pour gérer l'expiration du temps pour chaque question
+  useEffect(() => {
+    if (!quiz || answerSubmitted || quizCompleted) return;
+
+    // Si nous sommes en mode de chronométrage par question
+    if (quiz && quiz.time_type === 'specific_question' || quiz.time_type === 'individual_question') {
+      const timeLimit = quiz.questions[currentQuestionIndex]?.time_limit || quiz.time_per_question || 0;
+
+      // Si le temps est écoulé
+      if (remainingTime !== null && remainingTime <= 0) {
+        console.log("Temps écoulé pour cette question");
+        
+        // Arrêter le timer
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          setTimerInterval(null);
+        }
+        
+        // Si nous avons un participant, enregistrer une réponse vide
+        if (participantId && !answerSubmitted) {
+          const currentQuestion = quiz.questions[currentQuestionIndex];
+          
+          // Enregistrer une réponse vide
+          quizApi.addParticipantAnswer({
+            participant_id: participantId,
+            question_id: currentQuestion.id,
+            selected_option_id: null, // Aucune option sélectionnée
+            is_correct: false, // Forcément incorrect
+            time_spent: timeLimit // Temps maximum alloué
+          }).catch(error => console.error("Erreur lors de l'enregistrement de la réponse vide:", error));
+          
+          // Mettre à jour la progression du participant
+          quizApi.updateParticipant(participantId, {
+            current_question: currentQuestionIndex + 1
+          }).catch(error => console.error("Erreur lors de la mise à jour de la progression:", error));
+          
+          // Si c'était la dernière question, marquer comme terminé
+          if (currentQuestionIndex === quiz.questions.length - 1) {
+            quizApi.updateParticipant(participantId, {
+              completed_at: new Date().toISOString()
+            }).catch(error => console.error("Erreur lors de la finalisation du quiz:", error));
+          }
+        }
+        
+        // Marquer comme soumis et passer à la question suivante
+        setAnswerSubmitted(true);
+        
+        // Passer automatiquement à la question suivante après un petit délai
+        setTimeout(() => {
+          moveToNextQuestion();
+        }, 1000);
+      }
+    }
+  }, [remainingTime, quiz, currentQuestionIndex, timerInterval, answerSubmitted, quizCompleted, participantId]);
 
   // Gestion de l'état de chargement
   if (isLoading) {
